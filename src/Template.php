@@ -9,7 +9,7 @@
 		public Lexer $lex;
 		public Parser $parse;
 		public string $file, $text, $raw;
-		public array|null $context;
+		public ?array $context;
 		public array $tokens;
 
 		public function __construct(string $file = '', string $input = '')

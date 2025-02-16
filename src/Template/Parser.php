@@ -9,9 +9,9 @@
 
 		public string $output = '';
 		public array $tokens;
-		public array|null $context;
+		public ?array $context;
 
-		public function __construct(array|null &$context)
+		public function __construct(?array &$context)
 		{
 			$this->context = &$context;
 		}

@@ -3,8 +3,12 @@
 
 	class EndPoint
 	{
-		public string $name, $method, $file, $input;
-		public string $type, $callback, $event;
+		public string $name, $method;
+        public ?string $file, $input;
+        public ?\Closure $callback;
+
+
+		public string $type;
 		public array $schema = [];
 		public array $args;
 
@@ -16,34 +20,17 @@
 			if (!$schema) {
 				return;
 			}
+            
 			$this->schema = $this->validateTypes($schema);
 		}
 
-		public function tpl(string $file = '', string $input = ''): EndPoint
+		public function tpl(?string $file = null, ?string $input = null, ?\Closure $callback = null): EndPoint
 		{
-			if ($file) {
-				$this->file = $file;
-				$this->type = 'file';
-				return $this;
-			}
-			$this->input = $input;
-			$this->type = 'input';
+            $this->file = $file;
+            $this->input = $input;
 
-			return $this;
-		}
-
-		public function event(string $event): EndPoint
-		{
-			$this->event = $event;
-			$this->type = 'event';
-
-			return $this;
-		}
-
-		public function callback(string $functionName, mixed ...$args): EndPoint
-		{
-			$this->callback = $functionName;
-			$this->args = [...$args];
+            $this->type = $file != null ? 'file' : 'input';
+            $this->callback = $callback;
 
 			return $this;
 		}
@@ -53,21 +40,26 @@
 			$validated = [];
 
 			foreach ($params as $v) {
-				if ($v[0] != '%') {
+				if ($v[1] != '{') {
 					$validated[$v] = 'mixed';
 					continue;
 				}
 
-				$allowable = substr($v, 0, 2);
-				$value = substr($v, 2);
+				$allowable = substr($v, 0, 1);
+				$value = substr($v, 2, strlen($v) - 3);
 				$type = match ($allowable) {
-					'%s' => 'string',
-					'%i' => 'integer',
+					's' => 'string',
+					'i' => 'integer',
 					default => ''
 				};
-
+                
 				$validated[$value] = $type;
 			}
+            
 			return $validated;
 		}
+
+        public function executeCallback(array $args) {
+            return call_user_func($this->callback, ...$args);
+        }
 	}

@@ -49,7 +49,7 @@
 				array_shift($ex);
 				$args = $ex;
 			}
-
+            
 			return ['name' => $name, 'args' => $args];
 		}
 
@@ -61,7 +61,6 @@
 			$endPoint = NULL;
 			$args = NULL;
 
-			# Adjust for new embedded methods
 			foreach ($this->endPoints as $ep) {
 				if (!array_key_exists($method, $ep)) {
 					continue;
@@ -79,10 +78,9 @@
 
 				$status = StatusCodes::OK;
 				$endPoint = $n_ep;
-				$args = $exp['args'];
 				break;
 			}
 
-			return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
+			return ['code' => $status, 'ep' => $endPoint, 'args' => $exp['args']];
 		}
 	}
