@@ -39,18 +39,10 @@
 
 		public function parseEndpoint(string $uri): array
 		{
-			$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));
-			array_shift($ex);
-			$name = $ex[0];
+			$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));            
+            array_shift($ex);
 
-			$args = [];
-
-			if (sizeof($ex) > 1) {
-				array_shift($ex);
-				$args = $ex;
-			}
-            
-			return ['name' => $name, 'args' => $args];
+			return ['name' => $ex[0], 'args' => $ex];
 		}
 
 		public function validateEndpoint(string $uri, string $method): array
@@ -60,6 +52,7 @@
 			$status = StatusCodes::NOT_FOUND;
 			$endPoint = NULL;
 			$args = NULL;
+            $pageChk = TRUE;
 
 			foreach ($this->endPoints as $ep) {
 				if (!array_key_exists($method, $ep)) {
@@ -67,20 +60,40 @@
 				}
 
 				$n_ep = $ep[$method];
+                
 				if ($n_ep->name != $exp['name']) {
 					continue;
 				}
 
-				if (sizeof($exp['args']) !== sizeof($n_ep->schema)) {
-					$status = StatusCodes::BAD_REQUEST;
-					continue;
-				}
+                if(sizeof($exp['args']) <= array_key_last($n_ep->path)) {
+                    continue;
+                }
+
+                foreach($n_ep->path as $k=>$v) {
+                    if($exp['args'][$k] == $v) {
+                        continue;
+                    }
+                    $pageChk = FALSE;
+                }
+                
+                if(!$pageChk) {
+                    continue;
+                }
+
+                if(sizeof($n_ep->path) + sizeof($n_ep->args) != sizeof($exp['args'])) {
+				    $status = StatusCodes::BAD_REQUEST;
+                    continue;
+                }
 
 				$status = StatusCodes::OK;
 				$endPoint = $n_ep;
-				break;
-			}
 
-			return ['code' => $status, 'ep' => $endPoint, 'args' => $exp['args']];
+                foreach($n_ep->path as $k=>$v) {
+                    unset($exp['args'][$k]);
+                }
+                $args = $exp['args'];
+			}
+            
+			return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
 		}
 	}
