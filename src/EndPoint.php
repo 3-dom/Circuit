@@ -9,8 +9,8 @@
 
 
 		public string $type;
-		public array $schema = [];
-		public array $args;
+		public array $path = [];
+		public array $args = [];
 
 		public function __construct(string $name, string $method, array $schema)
 		{
@@ -21,7 +21,7 @@
 				return;
 			}
             
-			$this->schema = $this->validateTypes($schema);
+            $this->validateTypes($schema);
 		}
 
 		public function tpl(?string $file = null, ?string $input = null, ?\Closure $callback = null): EndPoint
@@ -39,9 +39,9 @@
 		{
 			$validated = [];
 
-			foreach ($params as $v) {
+			foreach ($params as $k=>$v) {
 				if ($v[1] != '{') {
-					$validated[$v] = 'mixed';
+					$this->path[$k] = $v;
 					continue;
 				}
 
@@ -53,9 +53,9 @@
 					default => ''
 				};
                 
-				$validated[$value] = $type;
+				$this->args[$value] = $type;
 			}
-            
+
 			return $validated;
 		}
 
