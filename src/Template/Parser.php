@@ -28,9 +28,8 @@
 
 		public function updateContext(mixed $context, string $key): void
 		{
-			foreach ($context as $k => $v) {
+			foreach ($context as $k => $v)
 				$this->context[$key][$k] = $v;
-			}
 		}
 
 		public function parseTokens(int $start = 0, int $end = -1): void
@@ -38,7 +37,7 @@
 			$next_token = -1;
 
 			$len = $this->getLength($start, $end);
-			$render_tokens = array_slice($this->tokens, $start, $len, true);
+			$render_tokens = array_slice($this->tokens, $start, $len, TRUE);
 
 			foreach ($render_tokens as $index => $token) {
 				$next_token = match ($token->type) {
@@ -47,9 +46,8 @@
 					default => $next_token
 				};
 
-				if ($index < $next_token) {
+				if ($index < $next_token)
 					continue;
-				}
 
 				$this->appendOutput($token->type, $token->data);
 			}
@@ -67,9 +65,8 @@
 
 		public function getLength(int $start, int $end): int
 		{
-			if ($end === -1) {
+			if ($end === -1)
 				return sizeof($this->tokens) - $start;
-			}
 
 			return $end - $start;
 		}
@@ -87,12 +84,11 @@
 			$s = $offset + 1;
 			$n = $s;
 
-			while (true) {
+			while (TRUE) {
 				$t = $this->tokens[$n];
 
-				if ($t->type == LexValues::LOOP_END) {
+				if ($t->type == LexValues::LOOP_END)
 					break;
-				}
 
 				$n++;
 			}
@@ -124,9 +120,8 @@
 
 			foreach ($split as $s) {
 				$search = $s;
-				if (!$scope) {
+				if (!$scope)
 					break;
-				}
 
 				if (!array_key_exists($search, $scope)) {
 					$scope = NULL;

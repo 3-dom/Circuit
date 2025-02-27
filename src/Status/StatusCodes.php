@@ -1,7 +1,8 @@
 <?php
 	namespace ThreeDom\SageRoute\Status;
 
-	enum StatusCodes :int {
+	enum StatusCodes: int
+	{
 		/* Informational */
 		case CONTINUE = 100;
 		case PROTOCOL_SWITCH = 101;

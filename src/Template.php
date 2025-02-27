@@ -45,9 +45,8 @@
 
 		public function updateContext(array $context, string $key): void
 		{
-			foreach ($context as $k => $v) {
+			foreach ($context as $k => $v)
 				$this->context[$key][$k] = $v;
-			}
 		}
 
 		public function clean(): void
