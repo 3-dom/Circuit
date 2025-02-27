@@ -39,8 +39,8 @@
 
 		public function parseEndpoint(string $uri): array
 		{
-			$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));            
-            array_shift($ex);
+			$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));
+			array_shift($ex);
 
 			return ['name' => $ex[0], 'args' => $ex];
 		}
@@ -52,48 +52,86 @@
 			$status = StatusCodes::NOT_FOUND;
 			$endPoint = NULL;
 			$args = NULL;
-            $pageChk = TRUE;
 
 			foreach ($this->endPoints as $ep) {
-				if (!array_key_exists($method, $ep)) {
+				if (!array_key_exists($method, $ep))
 					continue;
-				}
 
 				$n_ep = $ep[$method];
-                
-				if ($n_ep->name != $exp['name']) {
+				if ($n_ep->name != $exp['name'])
+					continue;
+
+				if (sizeof($exp['args']) <= array_key_last($n_ep->path))
+					continue;
+
+				$pathCheck = $this->pathEqualityCheck($n_ep->path, $exp['args']);
+				if (!$pathCheck)
+					continue;
+
+				if (sizeof($n_ep->path) + sizeof($n_ep->args) != sizeof($exp['args'])) {
+					$status = StatusCodes::BAD_REQUEST;
 					continue;
 				}
 
-                if(sizeof($exp['args']) <= array_key_last($n_ep->path)) {
-                    continue;
-                }
+				$this->correctArgs($n_ep->path, $exp['args']);
 
-                foreach($n_ep->path as $k=>$v) {
-                    if($exp['args'][$k] == $v) {
-                        continue;
-                    }
-                    $pageChk = FALSE;
-                }
-                
-                if(!$pageChk) {
-                    continue;
-                }
-
-                if(sizeof($n_ep->path) + sizeof($n_ep->args) != sizeof($exp['args'])) {
-				    $status = StatusCodes::BAD_REQUEST;
-                    continue;
-                }
+				$typeCheck = $this->argTypeCheck($n_ep->args, $exp['args']);
+				if (!$typeCheck) {
+					$status = StatusCodes::NOT_ACCEPTABLE;
+					continue;
+				}
 
 				$status = StatusCodes::OK;
 				$endPoint = $n_ep;
+				$args = $exp['args'];
 
-                foreach($n_ep->path as $k=>$v) {
-                    unset($exp['args'][$k]);
-                }
-                $args = $exp['args'];
+				break;
 			}
-            
+
 			return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
+		}
+
+		private function pathEqualityCheck(array $expected, array $given): bool
+		{
+			$chk = TRUE;
+			foreach ($expected as $k => $v) {
+				if ($given[$k] == $v)
+					continue;
+
+				$chk = FALSE;
+			}
+
+			return $chk;
+		}
+
+
+		private function argTypeCheck(array $expected, array $given): bool
+		{
+			$chk = TRUE;
+
+			$i = 0;
+			foreach ($expected as $k => $v) {
+				$arg = $given[$i];
+				if (is_numeric($arg))
+					$arg = (int)$arg;
+
+				$argType = gettype($arg);
+				$i++;
+
+				if ($v == $argType)
+					continue;
+
+				$chk = FALSE;
+			}
+
+			return $chk;
+		}
+
+		private function correctArgs(array $path, array &$args): void
+		{
+			foreach ($path as $k => $v)
+				unset($args[$k]);
+
+			$args = array_values($args);
 		}
 	}
