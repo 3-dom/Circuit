@@ -4,8 +4,8 @@
 	class EndPoint
 	{
 		public string $name, $method;
-        public ?string $file, $input;
-        public ?\Closure $callback;
+		public ?string $file, $input;
+		public ?\Closure $callback;
 
 
 		public string $type;
@@ -17,20 +17,28 @@
 			$this->name = $name;
 			$this->method = $method;
 
-			if (!$schema) {
+			if (!$schema)
 				return;
-			}
-            
-            $this->validateTypes($schema);
+
+			$this->validateTypes($schema);
 		}
 
-		public function tpl(?string $file = null, ?string $input = null, ?\Closure $callback = null): EndPoint
+		public function tplFile(string $file, ?\Closure $callback = NULL): EndPoint
 		{
-            $this->file = $file;
-            $this->input = $input;
+			$this->file = $file;
+			return $this->tpl('file', $callback);
+		}
 
-            $this->type = $file != null ? 'file' : 'input';
-            $this->callback = $callback;
+		public function tplString(string $input, ?\Closure $callback = NULL): EndPoint
+		{
+			$this->input = $input;
+			return $this->tpl('input', $callback);
+		}
+
+		public function tpl(string $type, ?\Closure $callback = NULL): EndPoint
+		{
+			$this->type = $type;
+			$this->callback = $callback;
 
 			return $this;
 		}
@@ -39,7 +47,7 @@
 		{
 			$validated = [];
 
-			foreach ($params as $k=>$v) {
+			foreach ($params as $k => $v) {
 				if ($v[1] != '{') {
 					$this->path[$k] = $v;
 					continue;
@@ -52,14 +60,15 @@
 					'i' => 'integer',
 					default => ''
 				};
-                
+
 				$this->args[$value] = $type;
 			}
 
 			return $validated;
 		}
 
-        public function executeCallback(array $args) {
-            return call_user_func($this->callback, ...$args);
-        }
+		public function executeCallback(array $args)
+		{
+			return call_user_func($this->callback, ...$args);
+		}
 	}
