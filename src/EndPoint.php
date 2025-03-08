@@ -34,6 +34,12 @@
 			$this->input = $input;
 			return $this->tpl('input', $callback);
 		}
+		
+		public function callback(?\Closure $callback = NULL): EndPoint
+		{
+			$this->callback = $callback;
+			return $this;
+		}
 
 		public function tpl(string $type, ?\Closure $callback = NULL): EndPoint
 		{
