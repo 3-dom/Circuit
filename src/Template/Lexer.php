@@ -35,37 +35,28 @@
 				}
 
 				$token_data = $tokens[2][0];
+
+
 				if (str_starts_with($token_data, '`')) {
 					$this->addToken(LexValues::TEMPLATE, $token_data);
 					continue;
 				}
 
-				if (str_starts_with($token_data, 'if')) {
-					$this->addToken(LexValues::CONDITION_START, $token_data);
-					continue;
-				}
-
-				if (str_starts_with($token_data, '/if')) {
-					$this->addToken(LexValues::CONDITION_END, $token_data);
-					continue;
-				}
-
-				if (str_starts_with($token_data, 'for')) {
-					$this->addToken(LexValues::LOOP_START, $token_data);
-					continue;
-				}
-
-				if (str_starts_with($token_data, '/for')) {
-					$this->addToken(LexValues::LOOP_END, $token_data);
-					continue;
-				}
-
-				$this->addToken(LexValues::IDENTIFIER, $token_data);
+                $this->addToken(
+                    match(explode(' ', $token_data)[0]) {
+                        'if' => LexValues::CONDITION_START,
+                        '/if' => LexValues::CONDITION_END,
+                        'for' => LexValues::LOOP_START,
+                        '/for' => LexValues::LOOP_END,
+                        default => LexValues::IDENTIFIER,
+                    },
+                    $token_data
+                );
 			}
 		}
 
-		# We store tokens as objects because it saves roughly (not joking I did the benchmarks) 0.00000016 seconds per
-		# every 10 operations.
+		# We store tokens as objects instead of array because it saves roughly (not joking I did the benchmarks)
+        # 0.00000016 seconds per every 10 operations.
 		public function addToken(LexValues $type, string $data): void
 		{
 			$this->tokens[] = new Token($type, $data);

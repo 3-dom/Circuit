@@ -9,7 +9,7 @@
 		public Lexer $lex;
 		public Parser $parse;
 		public string $file, $text, $raw;
-		public ?array $context;
+		public array $context = [];
 		public array $tokens;
 
 		public function __construct(string $file = '', string $input = '')
@@ -19,19 +19,19 @@
 
 			$this->lex = new Lexer();
 			$this->parse = new Parser($this->context);
-			$this->setContext([]);
 		}
 
 		public function lex(string $type, string $f): void
 		{
-			switch ($type) {
-				case 'file':
-					$this->lex->setFile($f);
-					break;
-				default:
-					$this->lex->setInput($f);
-					break;
-			}
+            if($type == 'file')
+            {
+                $this->lex->setFile($f);
+            }
+            else
+            {
+                $this->lex->setInput($f);
+            }
+
 			$this->lex->buildLexer();
 
 			$this->tokens = $this->lex->tokens;

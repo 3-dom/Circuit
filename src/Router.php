@@ -93,24 +93,21 @@
 
 		private function pathEqualityCheck(array $expected, array $given): bool
 		{
-			$chk = TRUE;
 			foreach ($expected as $k => $v) {
 				if ($given[$k] == $v)
 					continue;
 
-				$chk = FALSE;
+				return FALSE;
 			}
 
-			return $chk;
+			return true;
 		}
 
 
 		private function argTypeCheck(array $expected, array $given): bool
 		{
-			$chk = TRUE;
-
 			$i = 0;
-			foreach ($expected as $k => $v) {
+			foreach ($expected as $v) {
 				$arg = $given[$i];
 				if (is_numeric($arg))
 					$arg = (int)$arg;
@@ -121,10 +118,10 @@
 				if ($v == $argType)
 					continue;
 
-				$chk = FALSE;
+				return FALSE;
 			}
 
-			return $chk;
+			return true;
 		}
 
 		private function correctArgs(array $path, array &$args): void
