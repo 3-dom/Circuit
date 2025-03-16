@@ -85,3 +85,4 @@ it and add more function as and when the need arises.
 - Converting the Token array into a Linked List
 - Looking at graph tree performance over nested arrays.
 - Adding an Abstract Syntax Tree for 'if' statement support
+- Storing EndPoints inside of a prefix tree for faster accessing.
