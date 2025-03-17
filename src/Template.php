@@ -1,62 +1,68 @@
 <?php
 
-namespace ThreeDom\Circuit;
+	namespace ThreeDom\Circuit;
 
-use ThreeDom\Circuit\Template\Lexer;
-use ThreeDom\Circuit\Template\Parser;
+	use ThreeDom\Circuit\Template\Lexer;
+	use ThreeDom\Circuit\Template\Parser;
 
-class Template
-{
-	public Lexer $lex;
-	public Parser $parse;
-	public string $file, $text, $raw;
-	public array $context = [];
-	public array $tokens;
-
-	public function __construct(string $file = '', string $input = '')
+	class Template
 	{
-		$this->file = $file;
-		$this->text = $input;
+		public Lexer $lex;
 
-		$this->lex = new Lexer();
-		$this->parse = new Parser($this->context);
-	}
+		public Parser $parse;
 
-	public function lex(string $type, string $f): void
-	{
-		if ($type == 'file') {
-			$this->lex->setFile($f);
-		} else {
-			$this->lex->setInput($f);
+		public string $file, $text, $raw;
+
+		public array $context = [];
+
+		public array $tokens;
+
+		public function __construct(string $file = '', string $input = '')
+		{
+			$this->file = $file;
+			$this->text = $input;
+
+			$this->lex = new Lexer();
+			$this->parse = new Parser($this->context);
 		}
 
-		$this->lex->buildLexer();
+		public function lex(string $type, string $f): void
+		{
+			if($type == 'file')
+			{
+				$this->lex->setFile($f);
+			} else
+			{
+				$this->lex->setInput($f);
+			}
 
-		$this->tokens = $this->lex->tokens;
-		$this->parse->setInput($this->tokens);
-	}
+			$this->lex->buildLexer();
 
-	public function setContext(array $c): void
-	{
-		$this->context = $c;
-	}
+			$this->tokens = $this->lex->tokens;
+			$this->parse->setInput($this->tokens);
+		}
 
-	public function updateContext(array $context, string $key): void
-	{
-		foreach ($context as $k => $v)
-			$this->context[$key][$k] = $v;
-	}
+		public function setContext(array $c): void
+		{
+			$this->context = $c;
+		}
 
-	public function clean(): void
-	{
-		$this->setContext([]);
-		$this->parse->output = '';
-	}
+		public function updateContext(array $context, string $key): void
+		{
+			foreach($context as $k => $v)
+				$this->context[$key][$k] = $v;
+		}
 
-	public function render(): void
-	{
-		$this->parse->parseTokens();
-		print_r($this->parse->output);
-		$this->parse->output = '';
+		public function clean(): void
+		{
+			$this->setContext([]);
+			$this->parse->output = '';
+		}
+
+		public function render(): void
+		{
+			$this->parse->parseTokens();
+			print_r($this->parse->output);
+			$this->parse->output = '';
+		}
 	}
-}

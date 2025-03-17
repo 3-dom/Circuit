@@ -1,135 +1,139 @@
 <?php
 
-namespace ThreeDom\Circuit;
+	namespace ThreeDom\Circuit;
 
-use ThreeDom\Circuit\Status\StatusCodes;
+	use ThreeDom\Circuit\Status\StatusCodes;
 
-class Router
-{
-	public array $endPoints = [];
-
-	public function get(string $uri): EndPoint
+	class Router
 	{
-		return $this->addEndpoint($uri, 'GET');
-	}
+		public array $endPoints = [];
 
-	public function post(string $uri): EndPoint
-	{
-		return $this->addEndpoint($uri, 'POST');
-	}
+		public function get(string $uri): EndPoint
+		{
+			return $this->addEndpoint($uri, 'GET');
+		}
 
-	public function put(string $uri): EndPoint
-	{
-		return $this->addEndpoint($uri, 'PUT');
-	}
+		public function post(string $uri): EndPoint
+		{
+			return $this->addEndpoint($uri, 'POST');
+		}
 
-	public function delete(string $uri): EndPoint
-	{
-		return $this->addEndpoint($uri, 'DELETE');
-	}
+		public function put(string $uri): EndPoint
+		{
+			return $this->addEndpoint($uri, 'PUT');
+		}
 
-	public function addEndpoint(string $uri, string $method): EndPoint
-	{
-		$exp = $this->parseEndpoint($uri);
+		public function delete(string $uri): EndPoint
+		{
+			return $this->addEndpoint($uri, 'DELETE');
+		}
 
-		$ep = new EndPoint($exp['name'], $method, $exp['args']);
-		$this->endPoints[$uri][$method] = $ep;
+		public function addEndpoint(string $uri, string $method): EndPoint
+		{
+			$exp = $this->parseEndpoint($uri);
 
-		return $ep;
-	}
+			$ep = new EndPoint($exp['name'], $method, $exp['args']);
+			$this->endPoints[$uri][$method] = $ep;
 
-	public function parseEndpoint(string $uri): array
-	{
-		$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));
-		array_shift($ex);
+			return $ep;
+		}
 
-		return ['name' => $ex[0], 'args' => $ex];
-	}
+		public function parseEndpoint(string $uri): array
+		{
+			$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));
+			array_shift($ex);
 
-	public function validateEndpoint(string $uri, string $method): array
-	{
-		$exp = $this->parseEndpoint($uri);
+			return ['name' => $ex[0], 'args' => $ex];
+		}
 
-		$status = StatusCodes::NOT_FOUND;
-		$endPoint = NULL;
-		$args = NULL;
+		public function validateEndpoint(string $uri, string $method): array
+		{
+			$exp = $this->parseEndpoint($uri);
 
-		foreach ($this->endPoints as $ep) {
-			if (!array_key_exists($method, $ep))
-				continue;
+			$status = StatusCodes::NOT_FOUND;
+			$endPoint = NULL;
+			$args = NULL;
 
-			$n_ep = $ep[$method];
-			if ($n_ep->name != $exp['name'])
-				continue;
+			foreach($this->endPoints as $ep)
+			{
+				if(!array_key_exists($method, $ep))
+					continue;
 
-			if (sizeof($exp['args']) <= array_key_last($n_ep->path))
-				continue;
+				$n_ep = $ep[$method];
+				if($n_ep->name != $exp['name'])
+					continue;
 
-			$pathCheck = $this->pathEqualityCheck($n_ep->path, $exp['args']);
-			if (!$pathCheck)
-				continue;
+				if(sizeof($exp['args']) <= array_key_last($n_ep->path))
+					continue;
 
-			if (sizeof($n_ep->path) + sizeof($n_ep->args) != sizeof($exp['args'])) {
-				$status = StatusCodes::BAD_REQUEST;
-				continue;
+				$pathCheck = $this->pathEqualityCheck($n_ep->path, $exp['args']);
+				if(!$pathCheck)
+					continue;
+
+				if(sizeof($n_ep->path) + sizeof($n_ep->args) != sizeof($exp['args']))
+				{
+					$status = StatusCodes::BAD_REQUEST;
+					continue;
+				}
+
+				$this->correctArgs($n_ep->path, $exp['args']);
+
+				$typeCheck = $this->argTypeCheck($n_ep->args, $exp['args']);
+				if(!$typeCheck)
+				{
+					$status = StatusCodes::NOT_ACCEPTABLE;
+					continue;
+				}
+
+				$status = StatusCodes::OK;
+				$endPoint = $n_ep;
+				$args = $exp['args'];
+
+				break;
 			}
 
-			$this->correctArgs($n_ep->path, $exp['args']);
+			return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
+		}
 
-			$typeCheck = $this->argTypeCheck($n_ep->args, $exp['args']);
-			if (!$typeCheck) {
-				$status = StatusCodes::NOT_ACCEPTABLE;
-				continue;
+		private function pathEqualityCheck(array $expected, array $given): bool
+		{
+			foreach($expected as $k => $v)
+			{
+				if($given[$k] == $v)
+					continue;
+
+				return FALSE;
 			}
 
-			$status = StatusCodes::OK;
-			$endPoint = $n_ep;
-			$args = $exp['args'];
-
-			break;
+			return TRUE;
 		}
 
-		return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
-	}
+		private function argTypeCheck(array $expected, array $given): bool
+		{
+			$i = 0;
+			foreach($expected as $v)
+			{
+				$arg = $given[$i];
+				if(is_numeric($arg))
+					$arg = (int) $arg;
 
-	private function pathEqualityCheck(array $expected, array $given): bool
-	{
-		foreach ($expected as $k => $v) {
-			if ($given[$k] == $v)
-				continue;
+				$argType = gettype($arg);
+				$i++;
 
-			return FALSE;
+				if($v == $argType)
+					continue;
+
+				return FALSE;
+			}
+
+			return TRUE;
 		}
 
-		return true;
-	}
+		private function correctArgs(array $path, array &$args): void
+		{
+			foreach($path as $k => $v)
+				unset($args[$k]);
 
-
-	private function argTypeCheck(array $expected, array $given): bool
-	{
-		$i = 0;
-		foreach ($expected as $v) {
-			$arg = $given[$i];
-			if (is_numeric($arg))
-				$arg = (int)$arg;
-
-			$argType = gettype($arg);
-			$i++;
-
-			if ($v == $argType)
-				continue;
-
-			return FALSE;
+			$args = array_values($args);
 		}
-
-		return true;
 	}
-
-	private function correctArgs(array $path, array &$args): void
-	{
-		foreach ($path as $k => $v)
-			unset($args[$k]);
-
-		$args = array_values($args);
-	}
-}
