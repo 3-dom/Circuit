@@ -75,7 +75,7 @@ blazingly fast associative array access time.
 The template engine features the following syntax:
 - {{key.value}} - searches for a given key's value inside another key e.g. {{post.content}} where post would be: 'post' => ['content' => 'example]
 - {{key.key.value}} - supports nested associative arrays.
-- {{for x in|of y}} / {{/for}} - performing loops over nested arrays
+- {{for x as y}} / {{/for}} - performing loops over nested arrays
 - {{`link/to/template/file}} - running templates inside other templates.
 
 Circuit is by no means feature-complete and exists to solve a problem I had __in the moment__ however I do still work on 
