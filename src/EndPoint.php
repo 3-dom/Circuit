@@ -62,7 +62,7 @@
 
 			foreach($params as $k => $v)
 			{
-				if($v[1] != '{')
+				if(strlen($v) <= 1 || $v[1] != '{')
 				{
 					$this->path[$k] = $v;
 					continue;
