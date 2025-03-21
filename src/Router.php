@@ -36,12 +36,7 @@
 			$relativePath = str_replace($ep->name, '', $uri);
 			$relativePath = preg_replace('/^\/\//', '/', $relativePath);
 
-			$this
-				->endPoints
-			[$ep->name]
-			[$method]
-			[$relativePath]
-				= $ep;
+			$this->endPoints[$ep->name][$method][$relativePath] = $ep;
 
 			return $ep;
 		}
@@ -89,10 +84,8 @@
 		{
 			$exp = $this->parseEndpoint($uri);
 
-			$status = StatusCodes::NOT_FOUND;
-			$endPoint = NULL;
 			$args = NULL;
-
+			$status = StatusCodes::NOT_FOUND;
 			$endPoint = $this->endPoints[$exp['name']] ?? NULL;
 
 			if(!$endPoint)
@@ -106,11 +99,17 @@
 			foreach($relativePoints as $ep)
 			{
 				if(sizeof($exp['args']) <= array_key_last($ep->path))
+				{
+					$status = StatusCodes::BAD_REQUEST;
 					continue;
+				}
 
 				$pathCheck = $this->pathEqualityCheck($ep->path, $exp['args']);
 				if(!$pathCheck)
+				{
+					$status = StatusCodes::BAD_REQUEST;
 					continue;
+				}
 
 				if(sizeof($ep->path) + sizeof($ep->args) != sizeof($exp['args']))
 				{
@@ -119,12 +118,12 @@
 				}
 
 				$this->correctArgs($ep->path, $exp['args']);
-
 				$typeCheck = $this->argTypeCheck($ep->args, $exp['args']);
+
 				if(!$typeCheck)
 				{
 					$status = StatusCodes::NOT_ACCEPTABLE;
-					continue;
+					break;
 				}
 
 				$status = StatusCodes::OK;
@@ -141,7 +140,7 @@
 		{
 			foreach($expected as $k => $v)
 			{
-				if($given[$k] == $v)
+				if(strtolower($given[$k]) == strtolower($v))
 					continue;
 
 				return FALSE;
