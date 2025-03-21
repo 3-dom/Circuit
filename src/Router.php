@@ -1,5 +1,4 @@
 <?php
-
 	namespace ThreeDom\Circuit;
 
 	use ThreeDom\Circuit\Status\StatusCodes;
@@ -33,7 +32,16 @@
 			$exp = $this->parseEndpoint($uri);
 
 			$ep = new EndPoint($exp['name'], $method, $exp['args']);
-			$this->endPoints[$uri][$method] = $ep;
+
+			$relativePath = str_replace($ep->name, '', $uri);
+			$relativePath = preg_replace('/^\/\//', '/', $relativePath);
+
+			$this
+				->endPoints
+			[$ep->name]
+			[$method]
+			[$relativePath]
+				= $ep;
 
 			return $ep;
 		}
@@ -43,7 +51,38 @@
 			$ex = explode('/', str_replace('%20', ' ', rtrim($uri, '/')));
 			array_shift($ex);
 
-			return ['name' => $ex[0], 'args' => $ex];
+			$key = array_key_last($ex);
+			$val = $ex[$key];
+			if(!str_contains($val, '?'))
+				return ['name' => $ex[0], 'args' => $ex, 'sup' => []];
+
+			$ex[$key] = preg_replace('/\?.*/', '', $val);
+			$arg_arr = $this->getUserSuppliedArgs($val);
+
+			return ['name' => $ex[0], 'args' => $ex, 'sup' => $arg_arr];
+		}
+
+		public function getUserSuppliedArgs(string $val): array
+		{
+			$uri_args = preg_replace('/^.*?\?/', '', $val);
+			$arg_str_arr = explode('&', $uri_args);
+
+			$arg_arr = [];
+			foreach($arg_str_arr as $arg)
+			{
+				if(!$arg)
+					continue;
+				if(!str_contains($arg, '='))
+					continue;
+
+				$arg_split = explode('=', $arg);
+				if(count($arg_split) <= 1)
+					continue;
+
+				$arg_arr[$arg_split[0]] = $arg_split[1];
+			}
+
+			return $arg_arr;
 		}
 
 		public function validateEndpoint(string $uri, string $method): array
@@ -54,31 +93,34 @@
 			$endPoint = NULL;
 			$args = NULL;
 
-			foreach($this->endPoints as $ep)
+			$endPoint = $this->endPoints[$exp['name']] ?? NULL;
+
+			if(!$endPoint)
+				return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
+
+			if(!array_key_exists($method, $endPoint))
+				return ['code' => StatusCodes::METHOD_NOT_ALLOWED, 'ep' => $endPoint, 'args' => $args];
+
+			$relativePoints = $endPoint[$method];
+
+			foreach($relativePoints as $ep)
 			{
-				if(!array_key_exists($method, $ep))
+				if(sizeof($exp['args']) <= array_key_last($ep->path))
 					continue;
 
-				$n_ep = $ep[$method];
-				if($n_ep->name != $exp['name'])
-					continue;
-
-				if(sizeof($exp['args']) <= array_key_last($n_ep->path))
-					continue;
-
-				$pathCheck = $this->pathEqualityCheck($n_ep->path, $exp['args']);
+				$pathCheck = $this->pathEqualityCheck($ep->path, $exp['args']);
 				if(!$pathCheck)
 					continue;
 
-				if(sizeof($n_ep->path) + sizeof($n_ep->args) != sizeof($exp['args']))
+				if(sizeof($ep->path) + sizeof($ep->args) != sizeof($exp['args']))
 				{
 					$status = StatusCodes::BAD_REQUEST;
 					continue;
 				}
 
-				$this->correctArgs($n_ep->path, $exp['args']);
+				$this->correctArgs($ep->path, $exp['args']);
 
-				$typeCheck = $this->argTypeCheck($n_ep->args, $exp['args']);
+				$typeCheck = $this->argTypeCheck($ep->args, $exp['args']);
 				if(!$typeCheck)
 				{
 					$status = StatusCodes::NOT_ACCEPTABLE;
@@ -86,13 +128,13 @@
 				}
 
 				$status = StatusCodes::OK;
-				$endPoint = $n_ep;
+				$endPoint = $ep;
 				$args = $exp['args'];
 
 				break;
 			}
 
-			return ['code' => $status, 'ep' => $endPoint, 'args' => $args];
+			return ['code' => $status, 'ep' => $endPoint, 'args' => $args, 'userArgs' => $exp['sup']];
 		}
 
 		private function pathEqualityCheck(array $expected, array $given): bool
